@@ -8,3 +8,11 @@ def get_all_items():
     except Exception as e:
         print('Error: ', e)
         return None
+@app.route('/items/all')
+def get_all_items():
+    # Get items from the helper
+    res_data = helper.get_all_items()
+
+    # Return response
+    response = Response(json.dumps(res_data), mimetype='application/json')
+    return respons
