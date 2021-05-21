@@ -1,28 +1,49 @@
-import helper
-from flask import Flask, request, Response
-import json
-
-app = Flask(__name__)
-
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
-
-@app.route('/item/new', methods=['POST'])
-def add_item():
-    # Get item from the POST body
-    req_data = request.get_json()
-    item = req_data['item']
-
-    # Add item to the list
-    res_data = helper.add_to_list(item)
-
-    # Return error if item not added
-    if res_data is None:
-        response = Response("{'error': 'Item not added - " + item + "'}", status=400 , mimetype='application/json')
-        return response
-
-    # Return response
-    response = Response(json.dumps(res_data), mimetype='application/json')
-
-return response
+# ./app.py
+    
+    from flask import Flask, render_template, request, jsonify
+    from pusher import Pusher
+    import json
+    
+    # create flask app
+    app = Flask(__name__)
+    
+    # configure pusher object
+    pusher = Pusher(
+      app_id='YOUR_APP_ID',
+      key='YOUR_APP_KEY',
+      secret='YOUR_APP_SECRET',
+      cluster='YOUR_APP_CLUSTER',
+      ssl=True
+    )
+    
+    # index route, shows index.html view
+    @app.route('/')
+    def index():
+      return render_template('index.html')
+    
+    # endpoint for storing todo item
+    @app.route('/add-todo', methods = ['POST'])
+    def addTodo():
+      data = json.loads(request.data) # load JSON data from request
+      pusher.trigger('todo', 'item-added', data) # trigger `item-added` event on `todo` channel
+      return jsonify(data)
+    
+    # endpoint for deleting todo item
+    @app.route('/remove-todo/<item_id>')
+    def removeTodo(item_id):
+      data = {'id': item_id }
+      pusher.trigger('todo', 'item-removed', data)
+      return jsonify(data)
+    
+    # endpoint for updating todo item
+    @app.route('/update-todo/<item_id>', methods = ['POST'])
+    def updateTodo(item_id):
+      data = {
+        'id': item_id,
+        'completed': json.loads(request.data).get('completed', 0)
+      }
+      pusher.trigger('todo', 'item-updated', data)
+      return jsonify(data)
+    
+    # run Flask app in debug mode
+    app.run(debug=True)
