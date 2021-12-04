@@ -1,3 +1,4 @@
+#Create a table in the DB 
 CREATE TABLE "items" (
     "item" TEXT NOT NULL,
     "status" TEXT NOT NULL,
